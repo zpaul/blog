@@ -1,0 +1,121 @@
+#CRUD
+
+#Create-----------------------------------------------------------
+from uuid import uuid4
+user = User(id=str(uuid4()), username='jmilkfan', password='fanguiju')
+db.session.add(user)
+db.session.commit()
+
+#Retrieve----------------------------------------------------
+
+# 返回表中的第一条记录
+# 其中 User.query 返回的是 flask_sqlalchemy.BaseQuery object
+# flask_sqlalchemy.BaseQuery object 拥有对数据库操作的所有抽像方法
+user = User.query.first()
+print(user.username)
+
+
+# 返回表中指定主键的一条记录
+user = User.query.get('49f86ede-f1e5-410e-b564-27a97e12560c')
+print(user.username)
+
+# 返回符合过滤条件的第一条记录
+# 其中 db.session.query(User).filter_by(id='49f86ede-f1e5-410e-b564-27a97e12560c') 返回的是一个 sqlalchemy.orm.query.Query object 对象
+# sqlalchemy.orm.query.Query.first() 才是一个 User 对象
+user = db.session.query(User).filter_by(id='49f86ede-f1e5-410e-b564-27a97e12560c').first()
+
+# 获取多条记录
+# 返回符合过滤条件的所有记录, 将所有 username == fanguiju 的记录都获取
+user = db.session.query(User).filter_by(username='fanguiju').all()
+
+# 获取全部数据
+users = User.query.all()
+db.session.query(User).all()
+
+#限制返回记录的数目
+#这个返回特征常与数据的分页功能结合使用.
+users = db.session.query(User).limit(10).all()
+
+
+#SQLAlchemy 默认会根据主键的顺序来排序, 也是要显示的使用 order_by 函数来指定排序条件和排序的方式:
+# 正向排序
+users = db.session.query(User).order_by(User.username).all()
+# 反向排序
+users = db.session.query(User).order_by(User.username.desc()).all()
+#查询函数的链式调用
+users = db.session.query(User).order_by(User.username).limit(10).all()
+#可以使用 dir() 内置函数来查看一个 Query 对象提供的方法列表.
+dir(db.session.query(User))
+
+#Flask-SQLAlchemy 的专有分页函数 pagination
+#第一个参数表示查询返回第几页的内容,第二个参数表示每页显示的对象数量
+db.session.query(User).paginate(1,1)
+
+
+
+#Query 的过滤器
+user = db.session.query(User).filter(User.username.in_(['fanguiju', 'jmilkfan'])).limit(1).all()
+user = db.session.query(User).filter(not_(User.password == None)).all()
+user = db.session.query(User).filter(or_(not_(User.username == None), User.password != None)).all()
+
+
+#Update-----------------------------------------------------------------------------------------------
+# 注意: 更新的内容必须是 Dict 数据类型.
+#而且 update() 会自动的添加 User 的实例化对象到 session 中, 所以直接 commit 就可以写入到数据库了.
+user = db.session.query(User).first()
+user = db.session.query(User).filter(User.password == "xxxx").update({'username': 'xxxx'})
+db.session.commit()
+
+#Delete------------------------------------------------------------------------
+#将查询返回的 User 实例化对象进行 session 的 delete 操作, 就能够删除该对象所映射的记录数据了.
+user = db.session.query(User).first()
+db.session.delete(user)
+db.session.commit()
+
+
+#one to many--------------------------------------------------------------------------------
+>>> from uuid import uuid4
+# 实例化一个 User 的对象
+>>> user = User(id=str(uuid4()), username='jmilkfan', password='fanguiju')
+# 写入一条 users 记录
+>>> db.session.add(user)
+>>> db.session.commit()
+
+>>> user.posts
+# 现在因为还没有添加 posts 的记录所以为空
+>>> user.posts.all()
+[]
+
+# 实例化一个 Post 的对象
+>>> post_one = Post('First Post')
+# 主键值是非空的，必须指定一个，否则会报错
+>>> post_one.id = str(uuid4())
+# 指定该 post 是属于哪一个 user 的
+>>> post_one.user_id = user.id
+>>> db.session.add(post_one)
+>>> db.session.commit()
+
+>>> user.posts.all()
+[<Model Post `First Post`>]
+# 获取一个已经存在数据库中的记录 user
+>>> user = db.session.query(User).first()
+>>> user.id
+u'ad7fd192-89d8-4b53-af96-fceb1f91070f'
+
+# 实例化一个 Post 的对象 post_second
+>>> post_second = Post('Second Post')
+# 必须为其设置主键值
+>>> post_second.id = str(uuid4())
+# 现在该 post_second 对象是没有关联到任何 user 的
+>>> post_second.users
+# 为 post_second 指定一个 user 对象
+>>> post_second.users = user
+# 将 post_second 写入数据库
+>>> db.session.add(post_second)
+>>> db.session.commit()
+# 写入完成之后，user 才能够通过关系来访问到属于其下的 posts
+>>> user.posts.all()
+[<Model Post `Second Post`>, <Model Post `First Post`>]
+
+#-----------------------------------------------------------------------
+
