@@ -1,12 +1,15 @@
 from flask_sqlalchemy import SQLAlchemy
-from main import app
+from myblog.extensions import bcrypt
+
+# from myblog.__init__ import app
 
 # 定义数据模型
 
 # INIT the sqlalchemy object
 # Will be load the SQLALCHEMY_DATABASE_URL from config.py
 # SQLAlchemy 会自动的从 app 对象中的 DevConfig 中加载连接数据库的配置项
-db = SQLAlchemy(app)
+#在myblog/__init__.py中再初始化db对象
+db = SQLAlchemy()
 
 
 class User(db.Model):
@@ -37,6 +40,13 @@ class User(db.Model):
     def __repr__(self):
         """Define the string format for instance of User."""
         return "<Model User `{}`>".format(self.username)
+
+    def set_password(self,password):
+        """Convert the pwd to cryptograph via flask-bcrypt"""
+        return bcrypt.generate_password_hash(password)
+
+    def check_password(self,password):
+        return bcrypt.check_password_hash(self.password,password)
 
 
 # many to many 的关系仍然是由 db.relationship() 来定义

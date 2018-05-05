@@ -1,14 +1,24 @@
 # import Flask Script object
-from flask_script import Manager, Server
+import os
 from flask_migrate import Migrate, MigrateCommand
-import main
-import models
+from flask_script import Manager, Server
+
+from myblog import models, __init__,create_app
+
+#Get the env from os_environ
+env = os.environ.get('BLOG_ENV','dev')
+#Create app instance via factory method
+app = create_app('myblog.config.%sConfig' % env.capitalize())
+#Init manager
+manager = Manager(app)
+
+migrate = Migrate(app,models.db)
 
 # Init manager object via app object
-manager = Manager(main.app)
+# manager = Manager(__init__.app)
 
 # Init migrate object via app and db object
-migrate = Migrate(main.app, models.db)
+# migrate = Migrate(__init__.app, models.db)
 
 # Create some new commands
 manager.add_command("server", Server())
@@ -20,7 +30,13 @@ def make_shell_context():
     return: Default import object
     type: `Dict`
     """
-    return dict(app=main.app,db=models.db,User=models.User,Post=models.Post,Comment=models.Comment,Tag=models.Tag)
+    return dict(app=app,
+                db=models.db,
+                User=models.User,
+                Post=models.Post,
+                Comment=models.Comment,
+                Tag=models.Tag,
+                Serve=Server)
 
 if __name__ == '__main__':
     manager.run()

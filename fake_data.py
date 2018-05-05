@@ -1,8 +1,8 @@
-import random
 import datetime
+import random
 from uuid import uuid4
 
-from models import db,User,Tag,Post
+from myblog.models import db, User, Tag, Post
 
 # user = User(id=str(uuid4()), username='zhen', password='abc')
 # db.session.add(user)
